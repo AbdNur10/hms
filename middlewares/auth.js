@@ -27,7 +27,7 @@ export const isPatientAutheticated=catchAsyncErrors(async(req,res,next)=>{
     const decode=jwt.verify(token,process.env.JWT_SECRET_KEY);
     req.user=await User.findById(decode.id);
     if(req.user.role!=="Patient"){
-        return next(new ErrorHandler("Only Admin can access this route",401));
+        return next(new ErrorHandler(`${req.user.role} Only Admin can access this route",401`));
     }
     next();
     

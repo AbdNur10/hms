@@ -2,7 +2,7 @@ import { catchAsyncErrors } from '../middlewares/catchAsyncErrors.js';
 import ErrorHandler from '../middlewares/errorMiddleware.js';
 import { User } from '../models/userSchema.js';
 import { generateToken } from '../utils/jwtToken.js';
-
+import cloudinary from 'cloudinary';
 
 export const patientRegister = catchAsyncErrors(async (req, res, next) => {
     const {
@@ -159,6 +159,51 @@ export const addNewDoctor=catchAsyncErrors(async(req,res,next)=>{
     }
     const {docAvater}=req.files;
     const allowedFormats=["image/jpeg","image/png","image/jpg","image/gif","image/webp"];
+    if(!allowedFormats.includes(docAvater.mimetype)){
+        return next(new ErrorHandler("Avater must be in jpeg,png,jpg,gif,webp format", 400));
+    }
+    const {
+        firstName,
+        lastName,
+        email,
+        password,
+        phone,
+        nic,
+        gender,
+        dob,
+        doctorDepartment
+    }=req.body;
+    if(!firstName || !lastName || !email || !password || !phone || !nic || !gender || !dob || !doctorDepartment){
+        return next(new ErrorHandler("All fields are required", 400));
+    }
+    const isRegistered=await User.findOne({email});
+    if(isRegistered){
+        return next(new ErrorHandler(`User with email ${email} already exists`, 400));
+    }
+   const cloudinaryResponse=await cloudinary.uploader.upload(docAvater.tempFilePath);
 
-    //Condition is Required....
-})
+   if(!cloudinaryResponse ||cloudinaryResponse.error){
+    console.error("cloudinaryResponse",cloudinaryResponse.error || "Unknown error");
+   };
+    const doctor = await User.create({
+    firstName,
+    lastName,
+    email,
+    phone,
+    nic,
+    dob,
+    gender,
+    password,
+    role: "Doctor",
+    doctorDepartment,
+    docAvatar: {
+      public_id: cloudinaryResponse.public_id,
+      url: cloudinaryResponse.secure_url,
+    },
+  });
+  res.status(200).json({
+    success: true,
+    message: "New Doctor Registered",
+    doctor,
+  });
+});

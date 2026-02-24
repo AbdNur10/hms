@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
 import validator from "validator";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 
-const userSchema=new mongoose.Schema({
+
+const appointmentSchema=new mongoose.Schema({
     firstName:{
         type:String,
         required:true,
@@ -45,44 +44,47 @@ const userSchema=new mongoose.Schema({
         required:true,
         enum:["male","female","other"],
     },
-    password:{
-        type:String,
-        required:true,
-        minLength:[8,"Password must be at least 8 characters long"],
-        select:false,
+   appointment_date:{
+    type:String,
+    required:true
+   },
+   department:{
+    type:String,
+    required:true
+   },
+   doctor:{
+    firstName:{
+         type:String,
+    required:true
     },
-    role:{
-        type:String,
-        required:true,
-        enum:["Admin","Patient","Doctor"],
-        
-    },
-    doctorDepartment:{
-        type:String,
-    },
-    docAvater:{
-        public_id:String,
-        url:String,
+    lastName:{
+         type:String,
+    required:true
     }
+   },
+   hasVisited:{
+    type:Boolean,
+    default:false,
+   },
+    address: {
+    type: String,
+    required: [true, "Address Is Required!"],
+  },
+  doctorId: {
+    type: mongoose.Schema.ObjectId,
+    required: [true, "Doctor Id Is Invalid!"],
+  },
+  patientId: {
+    type: mongoose.Schema.ObjectId,
+    ref: "User",
+    required: [true, "Patient Id Is Required!"],
+  },
+  status: {
+    type: String,
+    enum: ["Pending", "Accepted", "Rejected"],
+    default: "Pending",
+  },
 });
 
- userSchema.pre("save",async function(next){
-    if(!this.isModified("password")){
-        next();
-    }
-    this.password=await bcrypt.hash(this.password,10);
- });
 
- userSchema.methods.comparePassword=async function(enteredPassword){
-    return await bcrypt.compare(enteredPassword,this.password);
- };
-
-//confused about that JWT is imported or not
-
- userSchema.methods.generateJsonWebToken=function(){
-    return isJWT.sign({id:this._id},process.env.JWT_SECRET_KEY,{
-        expiresIn:process.env.JWT_EXPIRES
-    })
- }
-
-export const User=mongoose.model("User",userSchema);
+export const Appointment=mongoose.model("Appointment",appointmentSchema);
